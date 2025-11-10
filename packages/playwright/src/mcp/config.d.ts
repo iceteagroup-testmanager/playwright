@@ -74,6 +74,12 @@ export type Config = {
      * The scripts will be evaluated in every page before any of the page's scripts.
      */
     initScript?: string[];
+
+    /**
+     * Paths to TypeScript files to add as initialization scripts.
+     * The scripts will be compiled and evaluated in every page before any of the page's scripts.
+     */
+    initTs?: string[];
   },
 
   server?: {

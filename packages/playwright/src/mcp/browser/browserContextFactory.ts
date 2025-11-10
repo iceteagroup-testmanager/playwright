@@ -84,7 +84,7 @@ class BaseContextFactory implements BrowserContextFactory {
     testDebug(`create browser context (${this._logName})`);
     const browser = await this._obtainBrowser(clientInfo);
     const browserContext = await this._doCreateContext(browser);
-    await addInitScript(browserContext, this.config.browser.initScript);
+    await addInitScript(browserContext, this.config.browser.initScript, this.config.browser.initTs);
     return {
       browserContext,
       close: (afterClose: () => Promise<void>) => this._closeBrowserContext(browserContext, browser, afterClose)
@@ -205,7 +205,7 @@ class PersistentContextFactory implements BrowserContextFactory {
       };
       try {
         const browserContext = await browserType.launchPersistentContext(userDataDir, launchOptions);
-        await addInitScript(browserContext, this.config.browser.initScript);
+        await addInitScript(browserContext, this.config.browser.initScript, this.config.browser.initTs);
         const close = (afterClose: () => Promise<void>) => this._closeBrowserContext(browserContext, userDataDir, afterClose);
         return { browserContext, close };
       } catch (error: any) {
@@ -274,9 +274,30 @@ function createHash(data: string): string {
   return crypto.createHash('sha256').update(data).digest('hex').slice(0, 7);
 }
 
-async function addInitScript(browserContext: playwright.BrowserContext, initScript: string[] | undefined) {
+async function compileTypeScriptToJavaScript(tsFilePath: string): Promise<string> {
+  const tsCode = await fs.promises.readFile(tsFilePath, 'utf8');
+
+  // Use esbuild to compile TypeScript to JavaScript
+  const esbuild = require('esbuild');
+  const result = await esbuild.transform(tsCode, {
+    loader: 'ts',
+    target: 'es2020',
+    format: 'iife',
+  });
+
+  return result.code;
+}
+
+async function addInitScript(browserContext: playwright.BrowserContext, initScript: string[] | undefined, initTs: string[] | undefined) {
+  // Add JavaScript init scripts
   for (const scriptPath of initScript ?? [])
     await browserContext.addInitScript({ path: path.resolve(scriptPath) });
+
+  // Add TypeScript init scripts (compile and add as content)
+  for (const tsPath of initTs ?? []) {
+    const jsCode = await compileTypeScriptToJavaScript(path.resolve(tsPath));
+    await browserContext.addInitScript(jsCode);
+  }
 }
 
 export class SharedContextFactory implements BrowserContextFactory {
