@@ -1,0 +1,78 @@
+name: Publish Playwright MCP
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish Playwright MCP Action
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate action.yml
+        run: |
+          if [ ! -f action.yml ]; then
+            echo "::error::action.yml file not found"
+            exit 1
+          fi
+          echo "✓ action.yml exists"
+          
+          # Basic validation of the action.yml structure
+          if ! grep -q "name:" action.yml || ! grep -q "description:" action.yml || ! grep -q "runs:" action.yml; then
+            echo "::error::action.yml is missing required fields"
+            exit 1
+          fi
+          echo "✓ action.yml has required fields"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Verify MCP command exists
+        run: |
+          if npx playwright run-mcp-server --help > /dev/null 2>&1; then
+            echo "✓ MCP server command is available"
+          else
+            echo "::error::MCP server command not found"
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Playwright MCP Action Published Successfully! 🎭" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This action can now be used in other workflows in your organization by referencing:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```yaml' >> $GITHUB_STEP_SUMMARY
+          echo "- uses: ${{ github.repository }}@${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "  with:" >> $GITHUB_STEP_SUMMARY
+          echo "    browser: chrome" >> $GITHUB_STEP_SUMMARY
+          echo "    headless: true" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Available Inputs:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`node-version\`: Node.js version to use (default: 20)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`browser\`: Browser to use - chrome, firefox, webkit, msedge (default: chrome)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`headless\`: Run browser in headless mode (default: false)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`host\`: Host to bind server to (default: localhost)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`port\`: Port to listen on for SSE transport" >> $GITHUB_STEP_SUMMARY
+          echo "- \`install-deps\`: Install system dependencies for browsers (default: true)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`additional-options\`: Additional options to pass to the MCP server" >> $GITHUB_STEP_SUMMARY

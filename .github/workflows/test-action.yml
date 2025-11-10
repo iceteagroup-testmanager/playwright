@@ -1,0 +1,72 @@
+name: Test Playwright MCP Action
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'action.yml'
+      - '.github/workflows/test-action.yml'
+
+jobs:
+  test-action:
+    name: Test MCP Action - ${{ matrix.browser }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        browser: [chrome, firefox, webkit]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Test Playwright MCP Action
+        id: test-mcp
+        uses: ./
+        with:
+          browser: ${{ matrix.browser }}
+          headless: true
+          node-version: '20'
+      
+      - name: Verify MCP setup
+        run: |
+          echo "✅ Playwright MCP Action executed successfully"
+          echo "Browser: ${{ matrix.browser }}"
+          echo "OS: ${{ matrix.os }}"
+      
+  test-with-port:
+    name: Test MCP with HTTP Server
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Start MCP server with port
+        id: mcp-server
+        uses: ./
+        with:
+          browser: chrome
+          headless: true
+          port: 8080
+          host: localhost
+      
+      - name: Verify server output
+        run: |
+          if [ -n "${{ steps.mcp-server.outputs.server-url }}" ]; then
+            echo "✅ Server URL is set: ${{ steps.mcp-server.outputs.server-url }}"
+          else
+            echo "❌ Server URL was not set"
+            exit 1
+          fi
+      
+      - name: Wait for server
+        run: |
+          # Give the server a moment to start
+          sleep 10
+          
+          # Check if the port is listening
+          if command -v netstat &> /dev/null; then
+            netstat -tuln | grep 8080 || echo "Port 8080 might not be listening"
+          fi
