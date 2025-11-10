@@ -64,6 +64,14 @@ jobs:
       - name: Update package.json for GitHub Packages
         run: |
           cd packages/playwright
+          # Auto-increment version using timestamp to avoid conflicts
+          # Format: 1.57.0-<YYYYMMDD>-<HHMMSS>-<short-sha>
+          TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          NEW_VERSION="1.57.0-${TIMESTAMP}-${SHORT_SHA}"
+          npm pkg set version="${NEW_VERSION}"
+          echo "Updated version to: ${NEW_VERSION}"
+
           # Update package name to be scoped
           npm pkg set name="@iceteagroup-testmanager/playwright"
           # Update repository URL
