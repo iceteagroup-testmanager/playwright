@@ -46,6 +46,7 @@ export type CLIOptions = {
   host?: string;
   ignoreHttpsErrors?: boolean;
   initScript?: string[];
+  initTs?: string[];
   isolated?: boolean;
   imageResponses?: 'allow' | 'omit';
   sandbox?: boolean;
@@ -129,6 +130,12 @@ async function validateConfig(config: FullConfig): Promise<void> {
     for (const script of config.browser.initScript) {
       if (!await fileExistsAsync(script))
         throw new Error(`Init script file does not exist: ${script}`);
+    }
+  }
+  if (config.browser.initTs) {
+    for (const script of config.browser.initTs) {
+      if (!await fileExistsAsync(script))
+        throw new Error(`Init TypeScript file does not exist: ${script}`);
     }
   }
   if (config.sharedBrowserContext && config.saveVideo)
@@ -219,6 +226,7 @@ export function configFromCLIOptions(cliOptions: CLIOptions): Config {
       cdpEndpoint: cliOptions.cdpEndpoint,
       cdpHeaders: cliOptions.cdpHeader,
       initScript: cliOptions.initScript,
+      initTs: cliOptions.initTs,
     },
     server: {
       port: cliOptions.port,
@@ -267,6 +275,9 @@ function configFromEnv(): Config {
   const initScript = envToString(process.env.PLAYWRIGHT_MCP_INIT_SCRIPT);
   if (initScript)
     options.initScript = [initScript];
+  const initTs = envToString(process.env.PLAYWRIGHT_MCP_INIT_TS);
+  if (initTs)
+    options.initTs = [initTs];
   options.isolated = envToBoolean(process.env.PLAYWRIGHT_MCP_ISOLATED);
   if (process.env.PLAYWRIGHT_MCP_IMAGE_RESPONSES === 'omit')
     options.imageResponses = 'omit';
