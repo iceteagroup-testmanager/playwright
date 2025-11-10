@@ -30,8 +30,8 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@playwright/experimental-ct-core": "1.57.0-next",
-    "@vitejs/plugin-vue": "^5.2.0"
+    "@vitejs/plugin-vue": "^5.2.0",
+    "@iceteagroup-testmanager/experimental-ct-core": "1.57.0-next"
   },
   "bin": {
     "playwright": "cli.js"
