@@ -1,10 +1,10 @@
 {
-  "name": "playwright-chromium",
+  "name": "@iceteagroup-testmanager/playwright-chromium",
   "version": "1.57.0-next",
   "description": "A high-level API to automate Chromium",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microsoft/playwright.git"
+    "url": "git+https://github.com/iceteagroup-testmanager/playwright.git"
   },
   "homepage": "https://playwright.dev",
   "engines": {
@@ -30,6 +30,9 @@
     "install": "node install.js"
   },
   "dependencies": {
-    "playwright-core": "1.57.0-next"
+    "@iceteagroup-testmanager/playwright-core": "1.57.0-next"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }

@@ -1,10 +1,10 @@
 {
-  "name": "@playwright/experimental-ct-react17",
+  "name": "@iceteagroup-testmanager/experimental-ct-react17",
   "version": "1.57.0-next",
   "description": "Playwright Component Testing for React",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microsoft/playwright.git"
+    "url": "git+https://github.com/iceteagroup-testmanager/playwright.git"
   },
   "homepage": "https://playwright.dev",
   "engines": {
@@ -30,10 +30,13 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@playwright/experimental-ct-core": "1.57.0-next",
-    "@vitejs/plugin-react": "^4.2.1"
+    "@vitejs/plugin-react": "^4.2.1",
+    "@iceteagroup-testmanager/experimental-ct-core": "1.57.0-next"
   },
   "bin": {
     "playwright": "cli.js"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }

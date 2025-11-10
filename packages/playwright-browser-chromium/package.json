@@ -1,10 +1,10 @@
 {
-  "name": "@playwright/browser-chromium",
+  "name": "@iceteagroup-testmanager/browser-chromium",
   "version": "1.57.0-next",
   "description": "Playwright package that automatically installs Chromium",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/microsoft/playwright.git"
+    "url": "git+https://github.com/iceteagroup-testmanager/playwright.git"
   },
   "homepage": "https://playwright.dev",
   "engines": {
@@ -27,6 +27,9 @@
     "install": "node install.js"
   },
   "dependencies": {
-    "playwright-core": "1.57.0-next"
+    "@iceteagroup-testmanager/playwright-core": "1.57.0-next"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   }
 }
