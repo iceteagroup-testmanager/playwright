@@ -1,0 +1,129 @@
+name: 'Playwright MCP Server'
+description: 'Set up and run Playwright MCP Server for browser automation'
+branding:
+  icon: 'play-circle'
+  color: 'green'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '20'
+  browser:
+    description: 'Browser to use (chrome, firefox, webkit, msedge)'
+    required: false
+    default: 'chrome'
+  headless:
+    description: 'Run browser in headless mode'
+    required: false
+    default: 'false'
+  host:
+    description: 'Host to bind server to'
+    required: false
+    default: 'localhost'
+  port:
+    description: 'Port to listen on for SSE transport'
+    required: false
+    default: ''
+  install-deps:
+    description: 'Install system dependencies for browsers'
+    required: false
+    default: 'true'
+  additional-options:
+    description: 'Additional options to pass to the MCP server'
+    required: false
+    default: ''
+
+outputs:
+  server-url:
+    description: 'URL of the MCP server if port is specified'
+    value: ${{ steps.start-server.outputs.server-url }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install dependencies
+      run: |
+        echo "::group::npm ci"
+        npm ci
+        echo "::endgroup::"
+      shell: bash
+      working-directory: ${{ github.action_path }}
+
+    - name: Build Playwright
+      run: |
+        echo "::group::npm run build"
+        npm run build
+        echo "::endgroup::"
+      shell: bash
+      working-directory: ${{ github.action_path }}
+
+    - name: Install Playwright browsers
+      run: |
+        echo "::group::npx playwright install"
+        if [ "${{ inputs.install-deps }}" = "true" ]; then
+          npx playwright install --with-deps ${{ inputs.browser }}
+        else
+          npx playwright install ${{ inputs.browser }}
+        fi
+        echo "::endgroup::"
+      shell: bash
+      working-directory: ${{ github.action_path }}
+
+    - name: Start MCP Server
+      id: start-server
+      run: |
+        echo "::group::Starting Playwright MCP Server"
+        
+        # Build the command
+        CMD="npx playwright run-mcp-server --browser ${{ inputs.browser }}"
+        
+        if [ "${{ inputs.headless }}" = "true" ]; then
+          CMD="$CMD --headless"
+        fi
+        
+        if [ -n "${{ inputs.host }}" ]; then
+          CMD="$CMD --host ${{ inputs.host }}"
+        fi
+        
+        if [ -n "${{ inputs.port }}" ]; then
+          CMD="$CMD --port ${{ inputs.port }}"
+          echo "server-url=http://${{ inputs.host }}:${{ inputs.port }}" >> $GITHUB_OUTPUT
+        fi
+        
+        if [ -n "${{ inputs.additional-options }}" ]; then
+          CMD="$CMD ${{ inputs.additional-options }}"
+        fi
+        
+        echo "Running: $CMD"
+        
+        # Start the server in the background if port is specified
+        if [ -n "${{ inputs.port }}" ]; then
+          $CMD &
+          MCP_SERVER_PID=$!
+          echo "MCP_SERVER_PID=$MCP_SERVER_PID" >> $GITHUB_ENV
+          echo "MCP server started with PID: $MCP_SERVER_PID"
+          
+          # Wait for server to be ready
+          sleep 5
+          
+          # Check if the server is still running
+          if ! kill -0 $MCP_SERVER_PID 2>/dev/null; then
+            echo "::error::MCP server failed to start"
+            exit 1
+          fi
+          
+          echo "MCP server is running on http://${{ inputs.host }}:${{ inputs.port }}"
+        else
+          echo "Running MCP server in stdio mode"
+          $CMD
+        fi
+        
+        echo "::endgroup::"
+      shell: bash
+      working-directory: ${{ github.action_path }}
