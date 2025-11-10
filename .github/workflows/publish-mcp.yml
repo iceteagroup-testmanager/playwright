@@ -70,6 +70,8 @@ jobs:
           npm pkg set repository.url="git+https://github.com/iceteagroup-testmanager/playwright.git"
           # Add publishConfig for GitHub Packages
           npm pkg set publishConfig.registry="https://npm.pkg.github.com"
+          # Update playwright-core dependency to use a version available in public npm registry
+          npm pkg set dependencies.playwright-core="^1.56.0"
 
       - name: Publish to GitHub Packages
         run: |
