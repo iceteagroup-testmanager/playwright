@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+      packages: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,7 +28,7 @@ jobs:
             exit 1
           fi
           echo "✓ action.yml exists"
-          
+
           # Basic validation of the action.yml structure
           if ! grep -q "name:" action.yml || ! grep -q "description:" action.yml || ! grep -q "runs:" action.yml; then
             echo "::error::action.yml is missing required fields"
@@ -55,11 +56,57 @@ jobs:
             exit 1
           fi
 
+      - name: Configure npm for GitHub Packages
+        run: |
+          echo "@iceteagroup-testmanager:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
+      - name: Update package.json for GitHub Packages
+        run: |
+          cd packages/playwright
+          # Update package name to be scoped
+          npm pkg set name="@iceteagroup-testmanager/playwright"
+          # Update repository URL
+          npm pkg set repository.url="git+https://github.com/iceteagroup-testmanager/playwright.git"
+          # Add publishConfig for GitHub Packages
+          npm pkg set publishConfig.registry="https://npm.pkg.github.com"
+
+      - name: Publish to GitHub Packages
+        run: |
+          cd packages/playwright
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Summary
         run: |
           echo "## Playwright MCP Action Published Successfully! 🎭" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "This action can now be used in other workflows in your organization by referencing:" >> $GITHUB_STEP_SUMMARY
+          echo "The package has been published to GitHub Packages!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Installation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To use this package, first configure npm to use GitHub Packages:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "echo \"@iceteagroup-testmanager:registry=https://npm.pkg.github.com\" >> .npmrc" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Then install the package:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "npm install @iceteagroup-testmanager/playwright" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Or use with npx:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "npx @iceteagroup-testmanager/playwright run-mcp-server --help" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### GitHub Action Usage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This action can also be used in other workflows in your organization by referencing:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```yaml' >> $GITHUB_STEP_SUMMARY
           echo "- uses: ${{ github.repository }}@${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
