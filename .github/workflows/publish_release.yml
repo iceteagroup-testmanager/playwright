@@ -30,7 +30,7 @@ jobs:
     - run: npm ci
     - run: npm run build
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NODE_AUTH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
 
     - name: "@next: publish with commit timestamp (triggered manually)"
       if: contains(github.ref, 'main') && github.event_name == 'workflow_dispatch'
@@ -38,23 +38,27 @@ jobs:
         node utils/build/update_canary_version.js --alpha --commit-timestamp
         utils/publish_all_packages.sh --alpha
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NODE_AUTH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        NPM_REGISTRY: https://npm.pkg.github.com
     - name: "@next: publish with today's date (triggered automatically)"
       if: contains(github.ref, 'main') && github.event.schedule
       run: |
         node utils/build/update_canary_version.js --alpha --today-date
         utils/publish_all_packages.sh --alpha
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NODE_AUTH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        NPM_REGISTRY: https://npm.pkg.github.com
     - name: "@beta: publish with commit timestamp (triggered automatically)"
       if: contains(github.ref, 'release') && github.event_name == 'push'
       run: |
         node utils/build/update_canary_version.js --beta --commit-timestamp
         utils/publish_all_packages.sh --beta
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NODE_AUTH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        NPM_REGISTRY: https://npm.pkg.github.com
     - name: "publish release"
       if: github.event_name == 'release' && github.event.action == 'published'
       run: utils/publish_all_packages.sh --release
       env:
-        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NODE_AUTH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        NPM_REGISTRY: https://npm.pkg.github.com

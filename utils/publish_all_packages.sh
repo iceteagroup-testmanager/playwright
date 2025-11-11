@@ -75,9 +75,30 @@ fi
 
 echo "==================== Publishing version ${VERSION} ================"
 node ./utils/workspace.js --ensure-consistent
+
+# Use NPM_REGISTRY if set, otherwise default to npmjs.org
+REGISTRY="${NPM_REGISTRY:-https://registry.npmjs.org}"
+echo "Publishing to registry: ${REGISTRY}"
+
+# If publishing to GitHub Packages, ensure authentication is configured
+if [[ "${REGISTRY}" == *"npm.pkg.github.com"* ]]; then
+  if [[ -z "${NODE_AUTH_TOKEN}" ]]; then
+    echo "ERROR: NODE_AUTH_TOKEN is required for publishing to GitHub Packages"
+    exit 1
+  fi
+  echo "Configuring authentication for GitHub Packages..."
+  echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+  echo "registry=${REGISTRY}" >> .npmrc
+fi
+
 node ./utils/workspace.js --list-public-package-paths | while read package
 do
   npm publish --access=public ${package} --tag="${NPM_PUBLISH_TAG}"
 done
+
+# Clean up .npmrc if it was created
+if [[ "${REGISTRY}" == *"npm.pkg.github.com"* ]]; then
+  rm -f .npmrc
+fi
 
 echo "Done."
